@@ -11,6 +11,8 @@ using namespace std;
 
 typedef bitset<8> BYTE;
 
+
+
 class Instruction
 {
 public:
@@ -95,4 +97,7 @@ void initMap()
 	myDictionary.Add("lui",LUI,0x0);
 	myDictionary.Add("slti",SLTI,0x0);
 	myDictionary.Add("sltiu",SLTIU,0x0);
+
+	myDictionary.Add("Display",0,SYSCALL);
+	
 }

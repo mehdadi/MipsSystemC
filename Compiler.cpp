@@ -19,7 +19,8 @@ int main(int argc, char** argv)
     while(getline(ifs,line))
     {
         cout << line << endl;
-
+        line.split(' ');
+        
 
         if (ifs.eof())
         {
