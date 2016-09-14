@@ -41,5 +41,6 @@
 #define SLTI 0xA //op		i
 #define SLTIU 0xB //op		i
 
+#define SYSCALL 0x0C //Func
 //Utils
 

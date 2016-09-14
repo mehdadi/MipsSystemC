@@ -11,7 +11,14 @@ using namespace std;
 
 typedef bitset<8> BYTE;
 
-
+struct comparer
+{
+    public:
+    bool operator()(const std::string x, const std::string y)
+    {
+         return x.compare(y)<0;
+    }
+};
 
 class Instruction
 {
@@ -25,7 +32,7 @@ private:
 
 };
 
-class Dictionary : map<string,Instruction>
+class Dictionary : public map<string,Instruction>
 {
 	public:
 	Dictionary();
@@ -61,9 +68,11 @@ void Dictionary::Add(string str, BYTE op, BYTE f)
 	this->insert(pair<string,Instruction>(ins.command,ins));
 }
 
+Dictionary myDictionary =  Dictionary();
+
 void initMap()
 {
-	Dictionary myDictionary =  Dictionary();
+	
 	myDictionary.Add("jr",R,JR);
 	myDictionary.Add("addu",R,ADDU);
 	myDictionary.Add("subu",R,SUBU);
