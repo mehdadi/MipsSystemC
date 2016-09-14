@@ -1,6 +1,6 @@
 #include "Compiler.h"
 
-#define bitset<32> WORD;
+//#define bitset<32> WORD;
 
 int main(int argc, char** argv)
 {
@@ -16,22 +16,32 @@ int main(int argc, char** argv)
     ofstream ofs(argv[2]);
     
     string line;
-    while(getline(ifs,line))
+    while(getline(ifs, line))
     {
-
-        int pos = line.find(' ',0);
-        string comm = line.substr(0,pos);
+        int len = line.length();
+        int pos = line.find(' ', 0);
+        string comm = line.substr(0, pos);
         
-        map<string,Instruction>::iterator val = myDictionary.find(comm);
+        map<string, Instruction>::iterator val = myDictionary.find(comm);
         if (val == myDictionary.end())
         {
-            cout <<"error in file"<<endl;
+            cout << "error in file" << endl;
             break;
         }
         
-        WORD result;
-        result 
-        cout << line << "\t0x" << result.to_string() << endl;
+        string spart = "";
+		if (val->second.hasImidiate)
+		{
+			
+		}
+		
+		
+		string s = "0b" + val->second.OpCode.to_string() ;
+        
+        cout << s <<endl;
+        
+        
+        //cout << line << "\t0x" << hex << result.to_ulong() << endl;
         
         if (ifs.eof())
         {
@@ -40,15 +50,13 @@ int main(int argc, char** argv)
     }
 
     ifs.close();
-
+	ofs.close();
+	
 	return 0;
 }
 
 
 /*
-
-
-
     string binary_str("11001111");
     bitset<8> set(binary_str);  
     cout << hex << set.to_ulong() << endl;

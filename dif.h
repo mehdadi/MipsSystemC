@@ -38,9 +38,22 @@
 #define SW 0x2B //op		i
 
 #define LUI 0xF //op		i
-#define SLTI 0xA //op		i
+//#define SLTI 0xA //op		i
 #define SLTIU 0xB //op		i
 
 #define SYSCALL 0x0C //Func
 //Utils
+
+//Masks
+#define MaskS 0x03E00000
+#define MaskT 0x001F0000
+#define MaskD 0x0000F800
+#define MaskI 0x0000FFFF
+#define MaskJ 0x03FFFFFF
+
+
+
+
+
+
 

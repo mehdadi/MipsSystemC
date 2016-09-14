@@ -11,6 +11,8 @@ using namespace std;
 
 typedef bitset<8> BYTE;
 
+
+
 struct comparer
 {
     public:
@@ -28,6 +30,9 @@ public:
 	string command;
 	BYTE OpCode;
 	BYTE FCode;
+	bool IsFunctional;
+	bool hasImidiate;
+	
 private:
 
 };
@@ -65,6 +70,13 @@ Dictionary::~Dictionary()
 void Dictionary::Add(string str, BYTE op, BYTE f)
 {
 	Instruction ins = Instruction(str,op,f);
+	if (op == 0)
+		ins.IsFunctional = false;
+	else	
+		ins.IsFunctional = true;
+
+	ins.hasImidiate = (op == ADDIU || op == ANDI || op == BEQ || op == LUI || op == LW || op == ORI || op == SLTIU || op == SW ||op == XORI);
+
 	this->insert(pair<string,Instruction>(ins.command,ins));
 }
 
@@ -104,7 +116,7 @@ void initMap()
 	myDictionary.Add("sw",SW,0x0);
 	
 	myDictionary.Add("lui",LUI,0x0);
-	myDictionary.Add("slti",SLTI,0x0);
+	//myDictionary.Add("slti",SLTI,0x0);
 	myDictionary.Add("sltiu",SLTIU,0x0);
 
 	myDictionary.Add("Display",0,SYSCALL);
