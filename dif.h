@@ -25,21 +25,21 @@
 #define J 0x2 //op			i
 #define JAL 0x3 //op		i
 
-#define BEQ 0x4 //op		i
-#define BNE 0x5 //op		i
-#define BGEZ 0x1 //op		i
+#define BEQ 0x4 //op		i   sti
+#define BNE 0x5 //op		i   sti
+#define BGEZ 0x1 //op		i   s1i
 
-#define ADDIU 0x9 //op		i
-#define ANDI 0x0C //op		i
-#define ORI 0x0D //op		i
-#define XORI 0x0E //op		i
+#define ADDIU 0x9 //op		i   sti
+#define ANDI 0x0C //op		i   sti
+#define ORI 0x0D //op		i   sti
+#define XORI 0x0E //op		i   sti
 
-#define LW 0x23 //op		i
-#define SW 0x2B //op		i
+#define LW 0x23 //op		i   sti
+#define SW 0x2B //op		i   sti
 
-#define LUI 0xF //op		i
+#define LUI 0xF //op		i   -ti
 //#define SLTI 0xA //op		i
-#define SLTIU 0xB //op		i
+#define SLTIU 0xB //op		i   sti
 
 #define SYSCALL 0x0C //Func
 //Utils

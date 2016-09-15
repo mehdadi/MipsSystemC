@@ -4,55 +4,68 @@
 
 int main(int argc, char** argv)
 {
-	if (argc < 2) 
+    if (argc < 2)
     {
         cout << "wrong usage...\n";
         return 0;
     }
-	initMap();
-	cout <<"map genrated \n";
+    initMap();
+    cout << "map genrated \n";
 
     ifstream ifs(argv[1]);
     ofstream ofs(argv[2]);
-    
+
     string line;
-    while(getline(ifs, line))
+    while (getline(ifs, line))
     {
-        int len = line.length();
-        int pos = line.find(' ', 0);
-        string comm = line.substr(0, pos);
-        
-        map<string, Instruction>::iterator val = myDictionary.find(comm);
+        if (ifs.eof())
+        {
+            break;
+        }
+
+        vector<string> comm = split(line, ' ');
+        string first = comm[0];
+        string second = comm[1];
+
+        map<string, Instruction>::iterator val = myDictionary.find(first);
         if (val == myDictionary.end())
         {
             cout << "error in file" << endl;
             break;
         }
-        
+
         string spart = "";
-		if (val->second.hasImidiate)
-		{
-			
-		}
-		
-		
-		string s = "0b" + val->second.OpCode.to_string() ;
-        
-        cout << s <<endl;
-        
-        
-        //cout << line << "\t0x" << hex << result.to_ulong() << endl;
-        
-        if (ifs.eof())
+        spart += val->second.OpCode.to_string();
+        if (val->second.ImJump)
         {
-            break;
+             spart += bitset<26>(stoi(second)).to_string();
+            //spart << hex << std::setw(6) << std::setfill('0') << stoi(second);
         }
+        else
+        {
+            vector<string> splited = split(second,',');
+            if (val->second.IsFunctional)
+            {
+                spart += bitset<5>(stoi((splited[0]))).to_string();
+                spart += bitset<5>(stoi((splited[1]))).to_string();
+                spart += bitset<5>(stoi((splited[2]))).to_string();
+                spart += bitset<11>(val->second.FCode.to_string()).to_string();
+            } else
+            {
+                spart += bitset<5>(stoi(splited[0])).to_string();
+                spart += bitset<5>(stoi(splited[1])).to_string();
+                spart += bitset<16>(stoi(splited[2])).to_string();
+
+            }
+        }
+
+        cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << bitset<32>(spart).to_ulong() << endl;
     }
 
     ifs.close();
-	ofs.close();
-	
-	return 0;
+    ofs.close();
+
+    return 0;
 }
 
 

@@ -4,35 +4,38 @@
 #include <bitset>
 #include <fstream>
 #include <regex>
+#include <sstream>
+#include <iomanip>
+#include <vector>
 
 #include "dif.h"
 
 using namespace std;
 
-typedef bitset<8> BYTE;
-
-
-
-struct comparer
+vector<string> split(string str, char delimiter)
 {
-    public:
-    bool operator()(const std::string x, const std::string y)
+    vector<string> internal;
+    stringstream ss(str); // Turn the string into a stream.
+    string tok;
+
+    while (getline(ss, tok, delimiter))
     {
-         return x.compare(y)<0;
+        internal.push_back(tok);
     }
-};
+
+    return internal;
+}
 
 class Instruction
 {
 public:
-	Instruction(string cmd, BYTE op, BYTE f);
+	Instruction(string cmd, bitset<6> op, bitset<11> f);
 	~Instruction();
 	string command;
-	BYTE OpCode;
-	BYTE FCode;
+	bitset<6> OpCode;
+	bitset<11> FCode;
 	bool IsFunctional;
-	bool hasImidiate;
-	
+	bool ImJump;
 private:
 
 };
@@ -42,12 +45,12 @@ class Dictionary : public map<string,Instruction>
 	public:
 	Dictionary();
 	~Dictionary();
-	void Add(string str, BYTE op, BYTE f);
+	void Add(string str, bitset<6> op, bitset<11> f);
 	private:
 	
 };
 
-Instruction::Instruction(string cmd, BYTE op, BYTE f)
+Instruction::Instruction(string cmd, bitset<6> op, bitset<11> f)
 {
 	command = cmd;
 	OpCode = op;
@@ -67,16 +70,14 @@ Dictionary::~Dictionary()
 
 }
 
-void Dictionary::Add(string str, BYTE op, BYTE f)
+void Dictionary::Add(string str, bitset<6> op, bitset<11> f)
 {
 	Instruction ins = Instruction(str,op,f);
 	if (op == 0)
-		ins.IsFunctional = false;
-	else	
 		ins.IsFunctional = true;
-
-	ins.hasImidiate = (op == ADDIU || op == ANDI || op == BEQ || op == LUI || op == LW || op == ORI || op == SLTIU || op == SW ||op == XORI);
-
+	else	
+		ins.IsFunctional = false;
+	ins.ImJump = op == J || op == JAL;
 	this->insert(pair<string,Instruction>(ins.command,ins));
 }
 
@@ -84,7 +85,6 @@ Dictionary myDictionary =  Dictionary();
 
 void initMap()
 {
-	
 	myDictionary.Add("jr",R,JR);
 	myDictionary.Add("addu",R,ADDU);
 	myDictionary.Add("subu",R,SUBU);
@@ -119,6 +119,6 @@ void initMap()
 	//myDictionary.Add("slti",SLTI,0x0);
 	myDictionary.Add("sltiu",SLTIU,0x0);
 
-	myDictionary.Add("Display",0,SYSCALL);
+	myDictionary.Add("display",0,SYSCALL);
 	
 }

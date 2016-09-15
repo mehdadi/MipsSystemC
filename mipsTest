@@ -1,9 +1,37 @@
-lw 0,0,150
-addiu 1,1,151
-addiu 2,2,152
-addiu 3,3,153
-addiu 4,4,154
-addiu 5,5,155
-addiu 6,6,156
-addiu 7,7,157
-display r,0,7
+addiu 1,1,11
+addiu 2,2,12
+addiu 3,3,13
+addiu 4,4,14
+addiu 5,5,15
+addiu 6,6,16
+addiu 7,7,17
+
+
+JR 150
+ADDU
+SUBU
+MULTU
+MFHI
+MFLO
+AND
+OR
+XOR
+SRL
+SLLV
+SRLV
+SLT
+SLTU
+J
+JAL
+BEQ
+BNE
+BGEZ
+ADDIU
+ANDI
+ORI
+XORI
+LW
+SW
+LUI
+SLTIU
+SYSCALL
