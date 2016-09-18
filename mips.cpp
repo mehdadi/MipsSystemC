@@ -24,8 +24,103 @@ UNROLL:
 	}
 }
 
+void mips::Reset()
+{
+    for (i = 0; i < 32; i++)
+    {
+        reg_sig[i] = 0;
+        reg_lock[i] = false;
+    }
+
+    inst_kill = 0;
+    curr_inst = 0;
+    reg_sig[29] = 0x7fffeffc;
+
+    pc_sig = 0x00400000;
+}
+
+unsigned int mips::Fetch(sc_signal pc)
+{
+    int pc_in = pc.read();
+
+    int ins = imem[IADDR (_pc_in)];
+
+    cout << "pc is: " << hex <<"0x" << _pc_in << "\tins is:" << hex << "0x" << ins << endl;
+
+    return ins;
+
+}
+
+DecodedStaff mips::Decode(int ins)
+{
+    DecodedStaff dstaff;
+    dstaff.op  = ins & MaskOP;
+    if (dstaff.op  == R)
+    {
+        int rs;
+        int rt;
+        int rd;
+
+        rd = ins & MaskD;
+        rt = ins & MaskT;
+        rs = ins & MaskS;
+
+        // stall stage until load is done ASSUMING single-cycle stall
+        while (reg_lock[rs] || reg_lock[rt] || reg_lock[rd])
+        {
+            wait();
+        }
+
+        reg_lock[rs] = true;
+        reg_lock[rt] = true;
+        reg_lock[rd] = true;
+
+        dstaff.s = reg_sig[rs].read();
+        dstaff.t = reg_sig[rt].read();
+        dstaff.d  = reg_sig[rd].read();
+        dstaff.has_i = false;
+        dstaff.op = op;
+        dstaff.func = ins & MaskF;
+    }
+    else if (dstaff.op  == J || dstaff.op  == JAL)
+    {
+        dstaff.i = ins & MaskJ;
+        dstaff.has_i = true;
+    }
+    else if (ins == NOP)
+    {
+        return NULL; // for now we return nothing
+    }
+    else
+    {
+        
+    }
+
+
+    return  dstaff;
+}
+
 void mips::mips_main()
 {
+
+    Reset();
+    wait();
+    while (true)
+    {
+        int ins = Fetch();
+        wait();
+        Decode(ins);
+        wait();
+        Excecute();
+        wait();
+        WriteBack();
+        wait();
+    }
+
+}
+
+
+/*
 	int i;
 	int n_inst;
 	int _pc_out; 
@@ -34,44 +129,35 @@ void mips::mips_main()
 	int _pc_in, _curr_inst;
 	long long HiLo;
 
-INIT:  
-	for (i = 0; i < 32; i++) 
-	{
-		reg_sig[i] = 0;
-		reg_lock[i] = false;
-	}
-	
-	inst_kill = 0;
-	curr_inst = 0;
-	reg_sig[29] = 0x7fffeffc;
-	n_inst = 0;
 
-	pc_sig = 0x00400000;
+INIT:  
+
 
 	wait();
+
 
 PIPE:  
 	while (1) 
 	{
-		//main_result_out = reg_sig.read();
-		// Make local copies of sc_signals for the forwarding
-		_pc_in = pc_sig.read();
-		
-		// Copy and increment the instruction counter, used to kill
-		_curr_inst = curr_inst.read();
+        //main_result_out = reg_sig.read();
+        // Make local copies of sc_signals for the forwarding
+        _pc_in = pc_sig.read();
 
-		curr_inst = curr_inst.read() + 1;
-		if (curr_inst.read() >= MAXSTAGE) 
-			curr_inst = 0;
+        // Copy and increment the instruction counter, used to kill
+        _curr_inst = curr_inst.read();
 
-		inst_kill[_curr_inst] = false;
-		wait();
-		ins = imem[IADDR (_pc_in)];
-		
-		cout << "pc is: " << hex <<"0x" << _pc_in << "\tins is:" << hex << "0x" << ins << endl;
-		
-		wait();
-		_pc_out = _pc_in + 4;
+        curr_inst = curr_inst.read() + 1;
+        if (curr_inst.read() >= MAXSTAGE)
+            curr_inst = 0;
+
+        inst_kill[_curr_inst] = false;
+        wait();
+        ins = imem[IADDR (_pc_in)];
+
+        cout << "pc is: " << hex <<"0x" << _pc_in << "\tins is:" << hex << "0x" << ins << endl;
+
+        wait();
+        _pc_out = _pc_in + 4;
 		op = ins >> 26;
 		switch (op)
 		  {
@@ -92,8 +178,6 @@ PIPE:
 
 				switch (funct)
 				{
-					//case NOP:
-					//	break;
 					case ADDU:
 						reg_rd = reg_rs + reg_rt;
 						break;
@@ -122,9 +206,9 @@ PIPE:
 					case XOR:
 						reg_rd = reg_rs ^ reg_rt;
 						break;
-					case SRL:
-						reg_rd = reg_rt >> shamt;
-						break;
+					//case SRL:
+					//	reg_rd = reg_rt >> shamt;
+					//	break;
 					case SLLV:
 						reg_rd = reg_rt << reg_rs;
 						break;
@@ -224,7 +308,7 @@ PIPE:
 							  reg_rt = 0;
 						  break;
 					  default:
-						  _pc_out = 0x4000000;	/* error */
+						  _pc_out = 0x4000000;
 						  cout << "[E00] CPU Error on Instruction---- Rebooting \n";
 						  sleep(5);
 						  break;
@@ -246,7 +330,7 @@ PIPE:
 	}
 }
 
-
+*/
 
 
 

@@ -95,7 +95,7 @@ void initMap()
 	myDictionary.Add("and",R,AND);
 	myDictionary.Add("or",R,OR);
 	myDictionary.Add("xor",R,XOR);
-	myDictionary.Add("srl",R,SRL);
+	//myDictionary.Add("srl",R,SRL);
 	myDictionary.Add("sllv",R,SLLV);
 	myDictionary.Add("srlv",R,SRLV);
 	myDictionary.Add("slt",R,SLT);
@@ -116,7 +116,7 @@ void initMap()
 	myDictionary.Add("sw",SW,0x0);
 	
 	myDictionary.Add("lui",LUI,0x0);
-	//myDictionary.Add("slti",SLTI,0x0);
+	myDictionary.Add("slti",SLTI,0x0);
 	myDictionary.Add("sltiu",SLTIU,0x0);
 
 	myDictionary.Add("display",0,SYSCALL);

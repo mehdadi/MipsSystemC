@@ -10,10 +10,14 @@ int main(int argc, char** argv)
         return 0;
     }
     initMap();
-    cout << "map genrated \n";
+
+    long count = 0x00400000;
 
     ifstream ifs(argv[1]);
     ofstream ofs(argv[2]);
+
+    ofs << "const unsigned long imem[] = {" <<endl;
+
 
     string line;
     while (getline(ifs, line))
@@ -55,12 +59,15 @@ int main(int argc, char** argv)
                 spart += bitset<5>(stoi(splited[0])).to_string();
                 spart += bitset<5>(stoi(splited[1])).to_string();
                 spart += bitset<16>(stoi(splited[2])).to_string();
-
             }
         }
 
-        cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << bitset<32>(spart).to_ulong() << endl;
+        ofs << "0x" << std::hex << std::setw(8) << std::setfill('0') << bitset<32>(spart).to_ulong()
+            << ", //\t [0x" << hex  << std::setw(8) << std::setfill('0') << count << "]\t" << line <<  endl;
+         count += 4;
     }
+
+    ofs << "};" <<endl;
 
     ifs.close();
     ofs.close();
