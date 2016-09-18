@@ -29,10 +29,10 @@ vector<string> split(string str, char delimiter)
 class Instruction
 {
 public:
-	Instruction(string cmd, bitset<6> op, bitset<11> f);
+	Instruction(string cmd, int op, bitset<11> f);
 	~Instruction();
 	string command;
-	bitset<6> OpCode;
+	int OpCode;
 	bitset<11> FCode;
 	bool IsFunctional;
 	bool ImJump;
@@ -45,12 +45,12 @@ class Dictionary : public map<string,Instruction>
 	public:
 	Dictionary();
 	~Dictionary();
-	void Add(string str, bitset<6> op, bitset<11> f);
+	void Add(string str, int op, bitset<11> f);
 	private:
 	
 };
 
-Instruction::Instruction(string cmd, bitset<6> op, bitset<11> f)
+Instruction::Instruction(string cmd, int op, bitset<11> f)
 {
 	command = cmd;
 	OpCode = op;
@@ -70,7 +70,7 @@ Dictionary::~Dictionary()
 
 }
 
-void Dictionary::Add(string str, bitset<6> op, bitset<11> f)
+void Dictionary::Add(string str, int op, bitset<11> f)
 {
 	Instruction ins = Instruction(str,op,f);
 	if (op == 0)
@@ -95,7 +95,6 @@ void initMap()
 	myDictionary.Add("and",R,AND);
 	myDictionary.Add("or",R,OR);
 	myDictionary.Add("xor",R,XOR);
-	//myDictionary.Add("srl",R,SRL);
 	myDictionary.Add("sllv",R,SLLV);
 	myDictionary.Add("srlv",R,SRLV);
 	myDictionary.Add("slt",R,SLT);

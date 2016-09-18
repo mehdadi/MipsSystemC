@@ -6,6 +6,7 @@
 #include "imem.h"
 
 
+
 #define MAXSTAGE 1
 
 SC_MODULE(mips) 
@@ -20,7 +21,7 @@ SC_MODULE(mips)
   sc_signal<int> pc_sig;
   sc_signal<int> reg_sig[32];
   // Vector of bits to lock source regs in R instructions
-  sc_signal<bool> reg_lock[32];
+  bool reg_lock[32];
   // Counter with the currently fetched instruction, and instruction kill vector
   //sc_signal<sc_uint<MAXSTAGE> > curr_inst;
   sc_bv<MAXSTAGE> inst_kill;
@@ -40,13 +41,15 @@ SC_MODULE(mips)
 
     void Reset();
 	DecodedStaff Fetch(int pc_offset);
-    void Decode(DecodedStaff ds);
-	void Excecute(DecodedStaff ds);
-	void WriteBack(DecodedStaff ds);
+    void Decode(DecodedStaff &ds);
+	void Excecute(DecodedStaff &ds);
+	void WriteBack(DecodedStaff &ds);
 
       /*
  private:
            SC_HAS_PROCESS(mips);*/
 
-}; 
+};
+
+
 

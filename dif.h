@@ -47,19 +47,17 @@
 //Utils
 
 //Masks
-#define MaskOP 0xFC000000
-#define MaskF 0x0000003F
-#define MaskS 0x03E00000
-#define MaskT 0x001F0000
-#define MaskD 0x0000F800
-#define MaskI 0x0000FFFF
-#define MaskJ 0x03FFFFFF
-
+#define MaskOP(x) ((x) >> 26)
+#define MaskF(x) ((x)&0x0000003F)
+#define MaskS(x) (((x)>>21) & 0x1F)
+#define MaskT(x) (((x)>>16) & 0x1F)
+#define MaskD(x) (((x)>>11) & 0x1F)
+#define MaskI(x) ((x)&0x0000FFFF)
+#define MaskJ(x) ((x)&0x03FFFFFF)
 
 struct DecodedStaff
 {
     bool noWB;
-    bool mem;
     int pc_in;
     int pc_out;
     int ins;
@@ -73,7 +71,6 @@ struct DecodedStaff
     int index_d;
     int immediate;
 };
-
 
 
 

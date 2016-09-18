@@ -25,13 +25,31 @@ UNROLL:
 	}
 }
 */
+/*
+void DecodedStaff::printDecodedStaff()
+{
+    cout
+            << "pc_in: " << this->pc_in
+            << "pc_out: " << this->pc_out
+            << "ins: " << this->ins
+            << "func: " << this->func
+            << "op: " << this->op
+            << "value_s: " << this->value_s
+            << "value_d: " << this->value_d
+            << "value_t: " << this->value_t
+            << "index_s: " << this->index_s
+            << "index_t: " << this->index_t
+            << "index_d: " << this->index_d
+            << "immediate: " << this->immediate <<endl;
+}
+*/
 
 void mips::Reset()
 {
     for (int i = 0; i < 32; i++)
     {
-        reg_sig[i] = 0;
-        reg_lock[i] = false;
+        reg_sig[i].write(0);
+        reg_lock[i] = (false);
     }
 
     inst_kill = 0;
@@ -48,34 +66,37 @@ DecodedStaff mips::Fetch(int pc_offset)
     ds.pc_in = pc_sig.read();
     ds.pc_out = ds.pc_in + 4;
     ds.ins = imem[IADDR (ds.pc_in)];
-    cout << "pc is: " << hex <<"0x" << ds.pc_in << "\tins is:" << hex << "0x" << ds.ins << endl;
+    cout << "pc is: " << hex <<"0x" << ds.pc_in << "\tins is: 0x" << hex << ds.ins << "\t" << std::bitset<32>(ds.ins).to_string() << endl;
     return ds;
 }
 
-void mips::Decode(DecodedStaff ds)
+void mips::Decode(DecodedStaff &ds)
 {
-    ds.op  = ds.ins & MaskOP;
+    ds.op  = MaskOP(ds.ins);
+    cout << ds.op << endl;
+
     if (ds.op  == R)
     {
-        ds.index_s = ds.ins & MaskS;
-        ds.index_t = ds.ins & MaskT;
-        ds.index_d = ds.ins & MaskD;
+        ds.index_s =MaskS(ds.ins);
+        ds.index_t =MaskT(ds.ins);
+        ds.index_d =MaskD(ds.ins);
+
         // stall stage until load is done
-        while (reg_lock[ds.index_s].read() || reg_lock[ds.index_t].read() || reg_lock[ds.index_d].read())
+        while (reg_lock[ds.index_s] || reg_lock[ds.index_t] || reg_lock[ds.index_d])
         {
             wait();
         }
-        reg_lock[ds.index_s].write(true);
-        reg_lock[ds.index_t].write(true);
-        reg_lock[ds.index_d].write(true);
+        reg_lock[ds.index_s] = (true);
+        reg_lock[ds.index_t] = (true);
+        reg_lock[ds.index_d] = (true);
         ds.value_s = reg_sig[ds.index_s];
         ds.value_t = reg_sig[ds.index_t];
         ds.value_d  = reg_sig[ds.index_d];
-        ds.func = ds.ins & MaskF;
+        ds.func = MaskF(ds.ins);
     }
     else if (ds.op  == J || ds.op  == JAL)
     {
-        ds.immediate = ds.ins & MaskJ;
+        ds.immediate = MaskJ(ds.ins);
     }
     else if (ds.ins == NOP)
     {
@@ -83,22 +104,22 @@ void mips::Decode(DecodedStaff ds)
     }
     else
     {
-        ds.index_s = ds.ins & MaskS;
-        ds.index_t = ds.ins & MaskT;
-        ds.immediate = ds.ins & MaskI;
-        while (reg_lock[ds.index_s].read() || reg_lock[ds.index_t].read())
+        ds.index_s = MaskS(ds.ins);
+        ds.index_t = MaskT(ds.ins);
+        ds.immediate = MaskI(ds.ins);
+        while (reg_lock[ds.index_s] || reg_lock[ds.index_t])
         {
             wait();
         }
-        reg_lock[ds.index_s].write(true);
-        reg_lock[ds.index_t].write(true);
+        reg_lock[ds.index_s] = (true);
+        reg_lock[ds.index_t] = (true);
 
         ds.value_s = reg_sig[ds.index_s];
         ds.value_t = reg_sig[ds.index_t];
     }
 }
 
-void mips::Excecute(DecodedStaff ds)
+void mips::Excecute(DecodedStaff &ds)
 {
     if (ds.ins == 0)
     {
@@ -106,6 +127,7 @@ void mips::Excecute(DecodedStaff ds)
     }
     else if (ds.op == R)
     {
+        cout << ds.op << endl;
         switch (ds.func)
         {
             case ADDU:
@@ -153,7 +175,7 @@ void mips::Excecute(DecodedStaff ds)
                     ds.value_d = 0;
                 break;
             default:
-                cout << "[E00] CPU Error on Instruction---- Rebooting \n";
+                cout << "[E00] CPU Error on Func Instruction---- Rebooting \n";
                 sc_stop();
                 break;
         }
@@ -218,7 +240,7 @@ void mips::Excecute(DecodedStaff ds)
                     ds.value_t = 0;
                 break;
             default:
-                cout << "[E00] CPU Error on Instruction---- Rebooting \n";
+                cout << "[E01] CPU Error on Op Instruction---- Rebooting \n";
                 sc_stop();
                 break;
         }
@@ -226,7 +248,7 @@ void mips::Excecute(DecodedStaff ds)
 }
 
 
-void mips::WriteBack(DecodedStaff ds)
+void mips::WriteBack(DecodedStaff &ds)
 {
     if (ds.op == JAL)
     {
@@ -239,15 +261,15 @@ void mips::WriteBack(DecodedStaff ds)
     else if (ds.op == R)
     {
         reg_sig[ds.index_d].write(ds.value_d);
-        reg_lock[ds.index_d].write(false);
-        reg_lock[ds.index_s].write(false);
-        reg_lock[ds.index_t].write(false);
+        reg_lock[ds.index_d] = (false);
+        reg_lock[ds.index_s] = (false);
+        reg_lock[ds.index_t] = (false);
     }
     else
     {
         reg_sig[ds.index_t].write(ds.value_t);
-        reg_lock[ds.index_s].write(false);
-        reg_lock[ds.index_t].write(false);
+        reg_lock[ds.index_s] = (false);
+        reg_lock[ds.index_t] = (false);
     }
 
 
@@ -256,7 +278,6 @@ void mips::WriteBack(DecodedStaff ds)
 
 void mips::mips_main()
 {
-
     Reset();
     wait();
     while (true)
@@ -266,10 +287,8 @@ void mips::mips_main()
         {
             break;
         }
-        cout << "fetch\n";
         wait();
         Decode(ds);
-        cout << "decode\n";
         wait();
         Excecute(ds);
         cout << "excec\n";

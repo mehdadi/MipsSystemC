@@ -14,9 +14,9 @@ int main(int argc, char** argv)
     long count = 0x00400000;
 
     ifstream ifs(argv[1]);
-    ofstream ofs(argv[2]);
+    //ofstream ofs(argv[2]);
 
-    ofs << "const unsigned long imem[] = {" <<endl;
+    cout << "const unsigned long imem[] = {" <<endl;
 
 
     string line;
@@ -38,8 +38,8 @@ int main(int argc, char** argv)
             break;
         }
 
-        string spart = "";
-        spart += val->second.OpCode.to_string();
+
+        string spart = bitset<6>(val->second.OpCode).to_string();
         if (val->second.ImJump)
         {
              spart += bitset<26>(stoi(second)).to_string();
@@ -62,15 +62,15 @@ int main(int argc, char** argv)
             }
         }
 
-        ofs << "0x" << std::hex << std::setw(8) << std::setfill('0') << bitset<32>(spart).to_ulong()
-            << ", //\t [0x" << hex  << std::setw(8) << std::setfill('0') << count << "]\t" << line <<  endl;
+        cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << bitset<32>(spart).to_ulong()
+            << ", //\t [0x" << hex  << std::setw(8) << std::setfill('0') << count << "]\t" << line << ",\t" << spart <<  endl;
          count += 4;
     }
 
-    ofs << "};" <<endl;
+    cout << "0xFFFFFFFF};" <<endl;
 
     ifs.close();
-    ofs.close();
+    //ofs.close();
 
     return 0;
 }
