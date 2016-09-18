@@ -1,4 +1,6 @@
 #define R 0x0  //op
+#define HALT 0xFFFFFFFF
+
 
 #define JR 0x8  //func		i           nPC = s
 
@@ -56,13 +58,20 @@
 
 struct DecodedStaff
 {
+    bool noWB;
+    bool mem;
+    int pc_in;
+    int pc_out;
+    int ins;
     int func;
     int op;
-    int s;
-    int d;
-    int t;
-    int i;
-    bool has_i;
+    int value_s;
+    int value_d;
+    int value_t;
+    int index_s;
+    int index_t;
+    int index_d;
+    int immediate;
 };
 
 

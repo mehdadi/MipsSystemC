@@ -2,7 +2,8 @@
 
 // Kill all instructions between _curr_inst (excluded) and curr_inst (included)
 // properly handling overflow of the curr_inst counter.
-void mips::kill_prefetched(sc_uint<MAXSTAGE> _curr_inst) 
+
+/*void mips::kill_prefetched(sc_uint<MAXSTAGE> _curr_inst)
 {
 UNROLL: 
 	for (int i = 0; i < MAXSTAGE; i++) 
@@ -23,81 +24,234 @@ UNROLL:
 		}
 	}
 }
+*/
 
 void mips::Reset()
 {
-    for (i = 0; i < 32; i++)
+    for (int i = 0; i < 32; i++)
     {
         reg_sig[i] = 0;
         reg_lock[i] = false;
     }
 
     inst_kill = 0;
-    curr_inst = 0;
+    //curr_inst = 0;
     reg_sig[29] = 0x7fffeffc;
 
     pc_sig = 0x00400000;
 }
 
-unsigned int mips::Fetch(sc_signal pc)
+DecodedStaff mips::Fetch(int pc_offset)
 {
-    int pc_in = pc.read();
-
-    int ins = imem[IADDR (_pc_in)];
-
-    cout << "pc is: " << hex <<"0x" << _pc_in << "\tins is:" << hex << "0x" << ins << endl;
-
-    return ins;
-
+    DecodedStaff ds;
+    ds.noWB = false;
+    ds.pc_in = pc_sig.read();
+    ds.pc_out = ds.pc_in + 4;
+    ds.ins = imem[IADDR (ds.pc_in)];
+    cout << "pc is: " << hex <<"0x" << ds.pc_in << "\tins is:" << hex << "0x" << ds.ins << endl;
+    return ds;
 }
 
-DecodedStaff mips::Decode(int ins)
+void mips::Decode(DecodedStaff ds)
 {
-    DecodedStaff dstaff;
-    dstaff.op  = ins & MaskOP;
-    if (dstaff.op  == R)
+    ds.op  = ds.ins & MaskOP;
+    if (ds.op  == R)
     {
-        int rs;
-        int rt;
-        int rd;
-
-        rd = ins & MaskD;
-        rt = ins & MaskT;
-        rs = ins & MaskS;
-
-        // stall stage until load is done ASSUMING single-cycle stall
-        while (reg_lock[rs] || reg_lock[rt] || reg_lock[rd])
+        ds.index_s = ds.ins & MaskS;
+        ds.index_t = ds.ins & MaskT;
+        ds.index_d = ds.ins & MaskD;
+        // stall stage until load is done
+        while (reg_lock[ds.index_s].read() || reg_lock[ds.index_t].read() || reg_lock[ds.index_d].read())
         {
             wait();
         }
-
-        reg_lock[rs] = true;
-        reg_lock[rt] = true;
-        reg_lock[rd] = true;
-
-        dstaff.s = reg_sig[rs].read();
-        dstaff.t = reg_sig[rt].read();
-        dstaff.d  = reg_sig[rd].read();
-        dstaff.has_i = false;
-        dstaff.op = op;
-        dstaff.func = ins & MaskF;
+        reg_lock[ds.index_s].write(true);
+        reg_lock[ds.index_t].write(true);
+        reg_lock[ds.index_d].write(true);
+        ds.value_s = reg_sig[ds.index_s];
+        ds.value_t = reg_sig[ds.index_t];
+        ds.value_d  = reg_sig[ds.index_d];
+        ds.func = ds.ins & MaskF;
     }
-    else if (dstaff.op  == J || dstaff.op  == JAL)
+    else if (ds.op  == J || ds.op  == JAL)
     {
-        dstaff.i = ins & MaskJ;
-        dstaff.has_i = true;
+        ds.immediate = ds.ins & MaskJ;
     }
-    else if (ins == NOP)
+    else if (ds.ins == NOP)
     {
-        return NULL; // for now we return nothing
+        return;
     }
     else
     {
-        
+        ds.index_s = ds.ins & MaskS;
+        ds.index_t = ds.ins & MaskT;
+        ds.immediate = ds.ins & MaskI;
+        while (reg_lock[ds.index_s].read() || reg_lock[ds.index_t].read())
+        {
+            wait();
+        }
+        reg_lock[ds.index_s].write(true);
+        reg_lock[ds.index_t].write(true);
+
+        ds.value_s = reg_sig[ds.index_s];
+        ds.value_t = reg_sig[ds.index_t];
+    }
+}
+
+void mips::Excecute(DecodedStaff ds)
+{
+    if (ds.ins == 0)
+    {
+        return;
+    }
+    else if (ds.op == R)
+    {
+        switch (ds.func)
+        {
+            case ADDU:
+                ds.value_d = ds.value_s + ds.value_t;
+                break;
+            case JR:
+                ds.pc_out = ds.value_s;
+                ds.noWB = true;
+                break;
+            case SUBU:
+                ds.value_d = ds.value_s - ds.value_t;
+                break;
+            case MULTU:
+                HILO = (ds.value_s) * (ds.value_t);
+                break;
+            case MFHI:
+                ds.value_d = (HILO >> 32);
+                break;
+            case MFLO:
+                ds.value_d = (HILO << 32);
+                break;
+            case AND:
+                ds.value_d = ds.value_s & ds.value_t;
+                break;
+            case OR:
+                ds.value_d = ds.value_s | ds.value_t;
+                break;
+            case XOR:
+                ds.value_d = ds.value_s ^ ds.value_t;
+                break;
+                //case SRL:
+                //	reg_rd = reg_rt >> shamt;
+                //	break;
+            case SLLV:
+                ds.value_d = ds.value_t << ds.value_s;
+                break;
+            case SRLV:
+                ds.value_d = ds.value_t >> ds.value_s;
+                break;
+            case SLT:
+            case SLTU:
+                if (ds.value_s < ds.value_t)
+                    ds.value_d = 1;
+                else
+                    ds.value_d = 0;
+                break;
+            default:
+                cout << "[E00] CPU Error on Instruction---- Rebooting \n";
+                sc_stop();
+                break;
+        }
+    }  else if (ds.op == JAL || ds.op == J)
+    {
+        ds.pc_out = ds.immediate << 2;
+    }
+    else
+    {
+        switch (ds.op)
+        {
+            case LW:
+            {
+                int addr = ds.value_s + ds.immediate;
+                ds.value_t = dmem[DADDR (addr)];
+                wait();
+            }
+                break;
+            case SW:
+            {
+                int addr = ds.value_s + ds.immediate;
+
+                dmem[DADDR (addr)] = ds.value_t;
+                wait();
+            }
+                break;
+            case BGEZ:
+                ds.noWB = true;
+                if (ds.value_s >= 0)
+                    ds.pc_out = ds.pc_in - 4 + (ds.immediate << 2);
+                break;
+            case BEQ:
+                ds.noWB = true;
+                if (ds.value_t == ds.value_s)
+                    ds.pc_out = ds.pc_in - 4 + (ds.immediate << 2);
+                break;
+            case BNE:
+                ds.noWB = true;
+                if (ds.value_t != ds.value_s)
+                    ds.pc_out = ds.pc_in - 4 + (ds.immediate << 2);
+                break;
+            case ADDIU:
+                ds.value_t = ds.value_s + ds.immediate;
+                break;
+            case ANDI:
+                ds.value_t = ds.value_s & ds.immediate;
+                break;
+            case ORI:
+                ds.value_t = ds.value_s | ds.immediate;
+                break;
+            case XORI:
+                ds.value_t = ds.value_s ^ ds.immediate;
+                break;
+            case LUI:
+                ds.value_t = ds.immediate << 16;
+                break;
+            case SLTIU:
+            case SLTI:
+                if (ds.value_s < ds.immediate)
+                    ds.value_t = 1;
+                else
+                    ds.value_t = 0;
+                break;
+            default:
+                cout << "[E00] CPU Error on Instruction---- Rebooting \n";
+                sc_stop();
+                break;
+        }
+    }
+}
+
+
+void mips::WriteBack(DecodedStaff ds)
+{
+    if (ds.op == JAL)
+    {
+        reg_sig[31].write(ds.pc_in);
+    }
+    else if (ds.noWB)
+    {
+
+    }
+    else if (ds.op == R)
+    {
+        reg_sig[ds.index_d].write(ds.value_d);
+        reg_lock[ds.index_d].write(false);
+        reg_lock[ds.index_s].write(false);
+        reg_lock[ds.index_t].write(false);
+    }
+    else
+    {
+        reg_sig[ds.index_t].write(ds.value_t);
+        reg_lock[ds.index_s].write(false);
+        reg_lock[ds.index_t].write(false);
     }
 
 
-    return  dstaff;
+    pc_sig.write(ds.pc_out);
 }
 
 void mips::mips_main()
@@ -107,16 +261,25 @@ void mips::mips_main()
     wait();
     while (true)
     {
-        int ins = Fetch();
+        DecodedStaff ds = Fetch(0);
+        if (ds.ins == HALT)
+        {
+            break;
+        }
+        cout << "fetch\n";
         wait();
-        Decode(ins);
+        Decode(ds);
+        cout << "decode\n";
         wait();
-        Excecute();
+        Excecute(ds);
+        cout << "excec\n";
         wait();
-        WriteBack();
+        WriteBack(ds);
+        cout << "writeback\n";
         wait();
-    }
 
+    }
+    sc_stop();
 }
 
 

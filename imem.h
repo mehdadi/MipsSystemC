@@ -1,3 +1,4 @@
+
 const unsigned long imem[] = {
 0x2421000b, //	 [0x00400000]	addiu 1,1,11
 0x2442000c, //	 [0x00400004]	addiu 2,2,12
@@ -6,4 +7,6 @@ const unsigned long imem[] = {
 0x24a5000f, //	 [0x00400010]	addiu 5,5,15
 0x24c60010, //	 [0x00400014]	addiu 6,6,16
 0x24e70011, //	 [0x00400018]	addiu 7,7,17
+0xFFFFFFFF, // HALT
 };
+
