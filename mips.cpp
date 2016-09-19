@@ -25,24 +25,24 @@ UNROLL:
 	}
 }
 */
-/*
-void DecodedStaff::printDecodedStaff()
+
+void mips::printDecodedStaff(DecodedStaff &ds)
 {
     cout
-            << "pc_in: " << this->pc_in
-            << "pc_out: " << this->pc_out
-            << "ins: " << this->ins
-            << "func: " << this->func
-            << "op: " << this->op
-            << "value_s: " << this->value_s
-            << "value_d: " << this->value_d
-            << "value_t: " << this->value_t
-            << "index_s: " << this->index_s
-            << "index_t: " << this->index_t
-            << "index_d: " << this->index_d
-            << "immediate: " << this->immediate <<endl;
+            << " pc_in: " << ds.pc_in
+            << " pc_out: " << ds.pc_out
+            << " ins: " << ds.ins
+            << " func: " << ds.func
+            << " op: " << ds.op
+            << " value_s: " << ds.value_s
+            << " value_d: " << ds.value_d
+            << " value_t: " << ds.value_t
+            << " index_s: " << ds.index_s
+            << " index_t: " << ds.index_t
+            << " index_d: " << ds.index_d
+            << " immediate: " << ds.immediate << endl;
 }
-*/
+
 
 void mips::Reset()
 {
@@ -73,8 +73,6 @@ DecodedStaff mips::Fetch(int pc_offset)
 void mips::Decode(DecodedStaff &ds)
 {
     ds.op  = MaskOP(ds.ins);
-    cout << ds.op << endl;
-
     if (ds.op  == R)
     {
         ds.index_s =MaskS(ds.ins);
@@ -173,6 +171,12 @@ void mips::Excecute(DecodedStaff &ds)
                     ds.value_d = 1;
                 else
                     ds.value_d = 0;
+                break;
+            case SYSCALL:
+                for (int ind = 0; ind < 32; ind++)
+                {
+                    cout << "reg(" << ind << ") = " << reg_sig[ind] << endl;
+                }
                 break;
             default:
                 cout << "[E00] CPU Error on Func Instruction---- Rebooting \n";
@@ -289,12 +293,11 @@ void mips::mips_main()
         }
         wait();
         Decode(ds);
+        printDecodedStaff(ds);
         wait();
         Excecute(ds);
-        cout << "excec\n";
         wait();
         WriteBack(ds);
-        cout << "writeback\n";
         wait();
 
     }

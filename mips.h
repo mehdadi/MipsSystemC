@@ -39,6 +39,7 @@ SC_MODULE(mips)
 		reset_signal_is(RSTn,true);
 	}
 
+	void printDecodedStaff(DecodedStaff &ds);
     void Reset();
 	DecodedStaff Fetch(int pc_offset);
     void Decode(DecodedStaff &ds);

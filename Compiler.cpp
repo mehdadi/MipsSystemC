@@ -65,6 +65,7 @@ int main(int argc, char** argv)
         cout << "0x" << std::hex << std::setw(8) << std::setfill('0') << bitset<32>(spart).to_ulong()
             << ", //\t [0x" << hex  << std::setw(8) << std::setfill('0') << count << "]\t" << line << ",\t" << spart <<  endl;
          count += 4;
+
     }
 
     cout << "0xFFFFFFFF};" <<endl;

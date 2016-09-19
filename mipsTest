@@ -5,3 +5,4 @@ addiu 4,4,14
 addiu 5,5,15
 addiu 6,6,16
 addiu 7,7,17
+display 0,31,1
