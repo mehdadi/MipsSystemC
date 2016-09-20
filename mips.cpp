@@ -29,7 +29,7 @@ void mips::Reset()
     //curr_inst = 0;
     reg_sig[29] = 0x7fffeffc;
 
-    pc_sig = 0x0040000;
+    pc_sig = PCStartAddr;
 }
 
 DecodedStaff mips::Fetch(sc_signal<int> &pc)
@@ -100,8 +100,6 @@ bool mips::Decode(DecodedStaff &ds)
 
 void mips::Excecute(DecodedStaff &ds)
 {
-    printDecodedStaff(ds);
-
     if (ds.ins == 0)
     {
         return;
@@ -183,8 +181,7 @@ void mips::Excecute(DecodedStaff &ds)
         }
     }  else if (ds.op == JAL || ds.op == J)
     {
-        //(PC & 0xf0000000) | (target << 2)
-        pc_sig.write((ds.pc_in & 0xf0000000) |  ds.immediate << 2);
+        pc_sig.write(PCStartAddr + (ds.immediate << 2));
     }
     else
     {
@@ -207,18 +204,17 @@ void mips::Excecute(DecodedStaff &ds)
             case BGEZ:
                 ds.noWB = true;
                 if (ds.value_s >= 0)
-                    pc_sig.write(ds.pc_in + (ds.immediate << 2));
+                    pc_sig.write(PCStartAddr + (ds.immediate << 2));
                 break;
             case BEQ:
                 ds.noWB = true;
                 if (ds.value_t == ds.value_s)
-                    pc_sig.write(ds.pc_in + (ds.immediate << 2));
+                    pc_sig.write(PCStartAddr + (ds.immediate << 2));
                 break;
             case BNE:
                 ds.noWB = true;
                 if (ds.value_t != ds.value_s)
-                    pc_sig.write(0x40000 + (ds.immediate << 2));
-                    cout << "bne is:" << (0x40000 + (ds.immediate << 2))<<endl;
+                    pc_sig.write(PCStartAddr + (ds.immediate << 2));
                 break;
             case ADDIU:
                 ds.value_t = ds.value_s + ds.immediate;
@@ -313,7 +309,6 @@ void mips::mips_main()
             }
 
             //if (branch == false)
-            cout << current_states[i] << endl;
             {
                 current_states[i] = getNextStatus(current_states[i]);
             }

@@ -11,7 +11,7 @@ int main(int argc, char** argv)
     }
     initMap();
 
-    long count = 0x00400000;
+    long count = PCStartAddr;
 
     ifstream ifs(argv[1]);
     //ofstream ofs(argv[2]);

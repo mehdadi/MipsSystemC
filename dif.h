@@ -55,6 +55,8 @@
 #define MaskI(x) ((x)&0x0000FFFF)
 #define MaskJ(x) ((x)&0x03FFFFFF)
 
+#define PCStartAddr 0x40000
+
 enum exStatus : int
 {
     fetch = 0,

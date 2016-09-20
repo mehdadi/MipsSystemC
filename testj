@@ -1,6 +1,6 @@
 addiu 0,0,10
 addiu 5,5,1
-nop,
+nop
 nop
 nop
 subu 0,5,0
