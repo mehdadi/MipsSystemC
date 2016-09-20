@@ -58,7 +58,6 @@ SC_MODULE(mips)
             case exceute:
                 return  writeback;
             case writeback:
-                return fetch;
             case halt0:
                 return fetch;
             case halt1:

@@ -40,7 +40,6 @@ DecodedStaff mips::Fetch(sc_signal<int> &pc)
     //npc_sig.write(ds.pc_in + 4);
     pc_sig.write(ds.pc_in + 4);
     ds.ins = imem[IADDR (ds.pc_in)];
-    cout << "pc is: " << hex <<"0x" << ds.pc_in << "\tins is: 0x" << hex << ds.ins << "\t" << std::bitset<32>(ds.ins).to_string() << endl;
     return ds;
 }
 
@@ -287,12 +286,13 @@ void mips::mips_main()
     {
         for (int i = 0 ; i < 1 ; i++)
         {
-            bool branch;
+            bool branch = false;
             switch (current_states[i])
             {
                 case fetch:
                 {
                     ds[i] = Fetch(pc_sig);
+                    //cout << "pc(" << i <<")is: " << hex <<"0x" << ds[i].pc_in << "\tins is: 0x" << hex << ds[i].ins << "\t" << std::bitset<32>(ds[i].ins).to_string() << endl;
                 }break;
                 case decode:
                 {
@@ -308,20 +308,23 @@ void mips::mips_main()
                 }break;
             }
 
-            //if (branch == false)
-            {
-                current_states[i] = getNextStatus(current_states[i]);
-            }
+            //cout << i << "::" << current_states[i];
+
+            current_states[i] = getNextStatus(current_states[i]);
             if (branch)
             {
                 for (int b = 0 ; b < 4 ; b++)
                 {
                     if (b != i)
                     {
-                        if (current_states[b] == fetch)
+                        if (current_states[b] == decode)
                         {
                             // there will be one for sure in WB so this wont go over
-                            current_states[b] = halt0;
+                            current_states[b] = halt1;
+                        }
+                        if (current_states[b] == fetch)
+                        {
+                            current_states[b] = halt2;
                         }
                     }
                 }
@@ -336,6 +339,7 @@ void mips::mips_main()
             break;
         }
         wait();
+        //getchar();
     }
     sc_stop();
 }

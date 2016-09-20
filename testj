@@ -12,3 +12,6 @@ nop
 nop
 nop
 bne 0,1,3
+nop
+nop
+nop
