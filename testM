@@ -1,0 +1,16 @@
+addiu 1,1,12
+nop 
+nop
+nop
+nop
+sw 1,1,1
+nop
+nop
+nop
+nop
+lw 1,1,1
+nop
+nop
+nop
+nop
+display 0,1,32

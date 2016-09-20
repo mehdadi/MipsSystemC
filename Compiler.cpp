@@ -38,12 +38,15 @@ int main(int argc, char** argv)
             break;
         }
 
-
         string spart = bitset<6>(val->second.OpCode).to_string();
         if (val->second.ImJump)
         {
              spart += bitset<26>(stoi(second)).to_string();
             //spart << hex << std::setw(6) << std::setfill('0') << stoi(second);
+        }
+        else if (val->first == "nop")
+        {
+            spart += bitset<26>(0).to_string();
         }
         else
         {

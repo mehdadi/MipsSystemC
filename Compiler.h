@@ -85,6 +85,7 @@ Dictionary myDictionary =  Dictionary();
 
 void initMap()
 {
+    myDictionary.Add("nop",R,R);
 	myDictionary.Add("jr",R,JR);
 	myDictionary.Add("addu",R,ADDU);
 	myDictionary.Add("subu",R,SUBU);

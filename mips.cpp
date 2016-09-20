@@ -47,6 +47,10 @@ DecodedStaff mips::Fetch(sc_signal<int> &pc)
 bool mips::Decode(DecodedStaff &ds)
 {
     ds.op  = MaskOP(ds.ins);
+    if (ds.ins == NOP)
+    {
+        return false;
+    }
     if (ds.op  == R)
     {
         ds.index_s =MaskS(ds.ins);
@@ -74,10 +78,6 @@ bool mips::Decode(DecodedStaff &ds)
         ds.noWB = true;
         return true;
     }
-    else if (ds.ins == NOP)
-    {
-        return false;
-    }
     else
     {
         ds.index_s = MaskS(ds.ins);
@@ -102,9 +102,13 @@ void mips::Excecute(DecodedStaff &ds)
     {
         return;
     }
+    else if (ds.ins == HALT)
+    {
+        cout << "System Halted" << endl;
+        return;
+    }
     else if (ds.op == R)
     {
-        cout << ds.op << endl;
         switch (ds.func)
         {
             case ADDU:
@@ -170,6 +174,7 @@ void mips::Excecute(DecodedStaff &ds)
     {
         switch (ds.op)
         {
+            cout << ds.op << endl;
             case LW:
             {
                 int addr = ds.value_s + ds.immediate;
@@ -268,7 +273,7 @@ void mips::mips_main()
 
     while (true)
     {
-        for (int i = 0 ; i < 4 ; i++)
+        for (int i = 0 ; i < 1 ; i++)
         {
             bool branch;
             switch (current_states[i])
@@ -314,13 +319,18 @@ void mips::mips_main()
                 }
             }
         }
-        if (ds[0].ins == HALT || ds[1].ins == HALT ||ds[2].ins == HALT ||ds[3].ins == HALT )
+
+        if ( (ds[0].ins == HALT && current_states[0] == writeback)||
+                (ds[1].ins == HALT && current_states[1] == writeback)||
+                (ds[2].ins == HALT && current_states[2] == writeback)||
+                (ds[3].ins == HALT && current_states[3] == writeback))
         {
             break;
         }
         wait();
+
     }
-    cout << "System Halted" << endl;
+
     sc_stop();
 }
 
