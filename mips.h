@@ -19,6 +19,7 @@ SC_MODULE(mips)
 	
   /*********** break SCC for pc and reg using sc_signal ***********/
   sc_signal<int> pc_sig;
+ // sc_signal<int> npc_sig;
   sc_signal<int> reg_sig[32];
   // Vector of bits to lock source regs in R instructions
   bool reg_lock[32];
@@ -41,11 +42,33 @@ SC_MODULE(mips)
 
 	void printDecodedStaff(DecodedStaff &ds);
     void Reset();
-	DecodedStaff Fetch(int pc_offset);
-    void Decode(DecodedStaff &ds);
+	DecodedStaff Fetch(sc_signal<int> &pc);
+    bool Decode(DecodedStaff &ds);
 	void Excecute(DecodedStaff &ds);
 	void WriteBack(DecodedStaff &ds);
 
+    exStatus getNextStatus(exStatus &status)
+    {
+        switch (status)
+        {
+            case fetch:
+                return decode;
+            case decode:
+                return exceute;
+            case exceute:
+                return  writeback;
+            case writeback:
+                return fetch;
+            case halt0:
+                return fetch;
+            case halt1:
+                return halt0;
+            case halt2:
+                return halt1;
+            default:
+                return halt0;
+        }
+    }
       /*
  private:
            SC_HAS_PROCESS(mips);*/

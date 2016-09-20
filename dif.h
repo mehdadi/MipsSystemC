@@ -55,11 +55,23 @@
 #define MaskI(x) ((x)&0x0000FFFF)
 #define MaskJ(x) ((x)&0x03FFFFFF)
 
+enum exStatus : int
+{
+    fetch = 0,
+    decode = 1,
+    exceute = 2,
+    writeback = 3,
+    halt0 = -1,
+    halt1 = -2,
+    halt2 = -3,
+};
+
+
+
 struct DecodedStaff
 {
     bool noWB;
     int pc_in;
-    int pc_out;
     int ins;
     int func;
     int op;

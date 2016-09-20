@@ -1,36 +1,9 @@
 #include "mips.h"
 
-// Kill all instructions between _curr_inst (excluded) and curr_inst (included)
-// properly handling overflow of the curr_inst counter.
-
-/*void mips::kill_prefetched(sc_uint<MAXSTAGE> _curr_inst)
-{
-UNROLL: 
-	for (int i = 0; i < MAXSTAGE; i++) 
-	{ 
-		if (_curr_inst < curr_inst) 
-		{ // No overflow
-			if (i > _curr_inst && i <= curr_inst.read()) 
-			{
-				inst_kill[i] = true;
-			}
-		}
-		else 
-		{ // Overflow
-			if (i < _curr_inst && i >= curr_inst.read())
-			{
-				inst_kill[i] = true;
-			}
-		}
-	}
-}
-*/
-
 void mips::printDecodedStaff(DecodedStaff &ds)
 {
     cout
             << " pc_in: " << ds.pc_in
-            << " pc_out: " << ds.pc_out
             << " ins: " << ds.ins
             << " func: " << ds.func
             << " op: " << ds.op
@@ -59,18 +32,19 @@ void mips::Reset()
     pc_sig = 0x00400000;
 }
 
-DecodedStaff mips::Fetch(int pc_offset)
+DecodedStaff mips::Fetch(sc_signal<int> &pc)
 {
     DecodedStaff ds;
     ds.noWB = false;
     ds.pc_in = pc_sig.read();
-    ds.pc_out = ds.pc_in + 4;
+    //npc_sig.write(ds.pc_in + 4);
+    pc_sig.write(ds.pc_in + 4);
     ds.ins = imem[IADDR (ds.pc_in)];
     cout << "pc is: " << hex <<"0x" << ds.pc_in << "\tins is: 0x" << hex << ds.ins << "\t" << std::bitset<32>(ds.ins).to_string() << endl;
     return ds;
 }
 
-void mips::Decode(DecodedStaff &ds)
+bool mips::Decode(DecodedStaff &ds)
 {
     ds.op  = MaskOP(ds.ins);
     if (ds.op  == R)
@@ -91,14 +65,18 @@ void mips::Decode(DecodedStaff &ds)
         ds.value_t = reg_sig[ds.index_t];
         ds.value_d  = reg_sig[ds.index_d];
         ds.func = MaskF(ds.ins);
+
+        return false;
     }
     else if (ds.op  == J || ds.op  == JAL)
     {
         ds.immediate = MaskJ(ds.ins);
+        ds.noWB = true;
+        return true;
     }
     else if (ds.ins == NOP)
     {
-        return;
+        return false;
     }
     else
     {
@@ -114,6 +92,7 @@ void mips::Decode(DecodedStaff &ds)
 
         ds.value_s = reg_sig[ds.index_s];
         ds.value_t = reg_sig[ds.index_t];
+        return ds.op == BEQ || ds.op == BGEZ || ds.op == BNE;
     }
 }
 
@@ -132,7 +111,7 @@ void mips::Excecute(DecodedStaff &ds)
                 ds.value_d = ds.value_s + ds.value_t;
                 break;
             case JR:
-                ds.pc_out = ds.value_s;
+                pc_sig.write(ds.value_s);
                 ds.noWB = true;
                 break;
             case SUBU:
@@ -185,7 +164,7 @@ void mips::Excecute(DecodedStaff &ds)
         }
     }  else if (ds.op == JAL || ds.op == J)
     {
-        ds.pc_out = ds.immediate << 2;
+        pc_sig.write(ds.immediate << 2);
     }
     else
     {
@@ -195,13 +174,12 @@ void mips::Excecute(DecodedStaff &ds)
             {
                 int addr = ds.value_s + ds.immediate;
                 ds.value_t = dmem[DADDR (addr)];
-                wait();
+                wait(); //hazard on pipeline
             }
                 break;
             case SW:
             {
                 int addr = ds.value_s + ds.immediate;
-
                 dmem[DADDR (addr)] = ds.value_t;
                 wait();
             }
@@ -209,17 +187,17 @@ void mips::Excecute(DecodedStaff &ds)
             case BGEZ:
                 ds.noWB = true;
                 if (ds.value_s >= 0)
-                    ds.pc_out = ds.pc_in - 4 + (ds.immediate << 2);
+                    pc_sig.write(ds.pc_in - 4 + (ds.immediate << 2));
                 break;
             case BEQ:
                 ds.noWB = true;
                 if (ds.value_t == ds.value_s)
-                    ds.pc_out = ds.pc_in - 4 + (ds.immediate << 2);
+                    pc_sig.write(ds.pc_in - 4 + (ds.immediate << 2));
                 break;
             case BNE:
                 ds.noWB = true;
                 if (ds.value_t != ds.value_s)
-                    ds.pc_out = ds.pc_in - 4 + (ds.immediate << 2);
+                    pc_sig.write(ds.pc_in - 4 + (ds.immediate << 2));
                 break;
             case ADDIU:
                 ds.value_t = ds.value_s + ds.immediate;
@@ -251,10 +229,13 @@ void mips::Excecute(DecodedStaff &ds)
     }
 }
 
-
 void mips::WriteBack(DecodedStaff &ds)
 {
-    if (ds.op == JAL)
+    if (ds.ins == NOP)
+    {
+        return;
+    }
+    else if (ds.op == JAL)
     {
         reg_sig[31].write(ds.pc_in);
     }
@@ -275,34 +256,91 @@ void mips::WriteBack(DecodedStaff &ds)
         reg_lock[ds.index_s] = (false);
         reg_lock[ds.index_t] = (false);
     }
-
-
-    pc_sig.write(ds.pc_out);
 }
 
 void mips::mips_main()
 {
     Reset();
     wait();
+
+    DecodedStaff ds[4];
+    exStatus current_states[4] { fetch, halt0, halt1, halt2 };
+
     while (true)
     {
-        DecodedStaff ds = Fetch(0);
-        if (ds.ins == HALT)
+        for (int i = 0 ; i < 4 ; i++)
+        {
+            bool branch;
+            switch (current_states[i])
+            {
+                case fetch:
+                {
+                    ds[i] = Fetch(pc_sig);
+                }break;
+                case decode:
+                {
+                    branch = Decode(ds[i]);
+                }break;
+                case exceute:
+                {
+                    Excecute(ds[i]);
+                }break;
+                case writeback:
+                {
+                    WriteBack(ds[i]);
+                }break;
+            }
+
+            if (branch == false)
+            {
+                current_states[i] = getNextStatus(current_states[i]);
+            }
+            else
+            {
+                for (int b = 0 ; b < 4 ; b++)
+                {
+                    if (b != i)
+                    {
+                        if (current_states[b] == fetch)
+                        {
+                            // there will be one for sure in WB so this wont go over
+                            current_states[b] = halt0;
+                        }
+                        else
+                        {
+                            current_states[b] = getNextStatus(current_states[b]);
+                        }
+                    }
+                }
+            }
+        }
+        if (ds[0].ins == HALT || ds[1].ins == HALT ||ds[2].ins == HALT ||ds[3].ins == HALT )
         {
             break;
         }
         wait();
-        Decode(ds);
-        printDecodedStaff(ds);
-        wait();
-        Excecute(ds);
-        wait();
-        WriteBack(ds);
-        wait();
-
     }
+    cout << "System Halted" << endl;
     sc_stop();
 }
+
+
+/*
+ds0 = Fetch(0);
+wait();
+ds1 = Fetch(1);
+Decode(ds0);
+wait();
+ds2 = Fetch(2);
+Decode(ds1);
+Excecute(ds0);
+wait();
+ds3 = Fetch(3);
+Decode(ds2);
+Excecute(ds1);
+WriteBack(ds0);
+wait();
+*/
 
 
 /*
