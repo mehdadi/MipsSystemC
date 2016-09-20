@@ -29,7 +29,7 @@ void mips::Reset()
     //curr_inst = 0;
     reg_sig[29] = 0x7fffeffc;
 
-    pc_sig = 0x00400000;
+    pc_sig = 0x0040000;
 }
 
 DecodedStaff mips::Fetch(sc_signal<int> &pc)
@@ -58,16 +58,17 @@ bool mips::Decode(DecodedStaff &ds)
         ds.index_d =MaskD(ds.ins);
 
         // stall stage until load is done
-        while (reg_lock[ds.index_s] || reg_lock[ds.index_t] || reg_lock[ds.index_d])
+        if (reg_lock[ds.index_s] || reg_lock[ds.index_t] || reg_lock[ds.index_d])
         {
-            wait();
+            cout << "[W00] func RegisterLock usage" <<endl;
+            wait(); wait();
         }
         reg_lock[ds.index_s] = (true);
         reg_lock[ds.index_t] = (true);
         reg_lock[ds.index_d] = (true);
-        ds.value_s = reg_sig[ds.index_s];
-        ds.value_t = reg_sig[ds.index_t];
-        ds.value_d  = reg_sig[ds.index_d];
+        ds.value_s = reg_sig[ds.index_s].read();
+        ds.value_t = reg_sig[ds.index_t].read();
+        ds.value_d  = reg_sig[ds.index_d].read();
         ds.func = MaskF(ds.ins);
 
         return false;
@@ -83,21 +84,24 @@ bool mips::Decode(DecodedStaff &ds)
         ds.index_s = MaskS(ds.ins);
         ds.index_t = MaskT(ds.ins);
         ds.immediate = MaskI(ds.ins);
-        while (reg_lock[ds.index_s] || reg_lock[ds.index_t])
+        if (reg_lock[ds.index_s] || reg_lock[ds.index_t])
         {
-            wait();
+            cout << "[W01] op RegisterLock usage" <<endl;
+            wait(); wait();
         }
         reg_lock[ds.index_s] = (true);
         reg_lock[ds.index_t] = (true);
 
-        ds.value_s = reg_sig[ds.index_s];
-        ds.value_t = reg_sig[ds.index_t];
+        ds.value_s = reg_sig[ds.index_s].read();
+        ds.value_t = reg_sig[ds.index_t].read();
         return ds.op == BEQ || ds.op == BGEZ || ds.op == BNE;
     }
 }
 
 void mips::Excecute(DecodedStaff &ds)
 {
+    printDecodedStaff(ds);
+
     if (ds.ins == 0)
     {
         return;
@@ -156,10 +160,21 @@ void mips::Excecute(DecodedStaff &ds)
                     ds.value_d = 0;
                 break;
             case SYSCALL:
-                for (int ind = 0; ind < 32; ind++)
+                if (ds.index_d == 0)
                 {
-                    cout << "reg(" << ind << ") = " << reg_sig[ind] << endl;
+                    for (int ind = 0; ind < 32; ind++)
+                    {
+                        cout << "reg(" << ind << ") = " << reg_sig[ind] << endl;
+                    }
                 }
+                else
+                {
+                    for (int ind = 0; ind < 64; ind++)
+                    {
+                        cout << "mem(" << ind << ") = " << (dmem[ind].range(31,0)) << endl;
+                    }
+                }
+
                 break;
             default:
                 cout << "[E00] CPU Error on Func Instruction---- Rebooting \n";
@@ -168,41 +183,42 @@ void mips::Excecute(DecodedStaff &ds)
         }
     }  else if (ds.op == JAL || ds.op == J)
     {
-        pc_sig.write(ds.immediate << 2);
+        //(PC & 0xf0000000) | (target << 2)
+        pc_sig.write((ds.pc_in & 0xf0000000) |  ds.immediate << 2);
     }
     else
     {
         switch (ds.op)
         {
-            cout << ds.op << endl;
             case LW:
             {
                 int addr = ds.value_s + ds.immediate;
-                ds.value_t = dmem[DADDR (addr)];
+                ds.value_t = dmem[addr].range(31,0);
                 wait(); //hazard on pipeline
             }
                 break;
             case SW:
             {
                 int addr = ds.value_s + ds.immediate;
-                dmem[DADDR (addr)] = ds.value_t;
+                dmem[addr] = ds.value_t;
                 wait();
             }
                 break;
             case BGEZ:
                 ds.noWB = true;
                 if (ds.value_s >= 0)
-                    pc_sig.write(ds.pc_in - 4 + (ds.immediate << 2));
+                    pc_sig.write(ds.pc_in + (ds.immediate << 2));
                 break;
             case BEQ:
                 ds.noWB = true;
                 if (ds.value_t == ds.value_s)
-                    pc_sig.write(ds.pc_in - 4 + (ds.immediate << 2));
+                    pc_sig.write(ds.pc_in + (ds.immediate << 2));
                 break;
             case BNE:
                 ds.noWB = true;
                 if (ds.value_t != ds.value_s)
-                    pc_sig.write(ds.pc_in - 4 + (ds.immediate << 2));
+                    pc_sig.write(0x40000 + (ds.immediate << 2));
+                    cout << "bne is:" << (0x40000 + (ds.immediate << 2))<<endl;
                 break;
             case ADDIU:
                 ds.value_t = ds.value_s + ds.immediate;
@@ -296,11 +312,12 @@ void mips::mips_main()
                 }break;
             }
 
-            if (branch == false)
+            //if (branch == false)
+            cout << current_states[i] << endl;
             {
                 current_states[i] = getNextStatus(current_states[i]);
             }
-            else
+            if (branch)
             {
                 for (int b = 0 ; b < 4 ; b++)
                 {
@@ -310,10 +327,6 @@ void mips::mips_main()
                         {
                             // there will be one for sure in WB so this wont go over
                             current_states[b] = halt0;
-                        }
-                        else
-                        {
-                            current_states[b] = getNextStatus(current_states[b]);
                         }
                     }
                 }
@@ -328,9 +341,7 @@ void mips::mips_main()
             break;
         }
         wait();
-
     }
-
     sc_stop();
 }
 

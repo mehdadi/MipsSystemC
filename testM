@@ -1,16 +1,15 @@
-addiu 1,1,12
-nop 
-nop
-nop
-nop
-sw 1,1,1
+addiu 1,1,150
 nop
 nop
 nop
 nop
-lw 1,1,1
+sw 0,1,0
 nop
 nop
 nop
+lw 0,5,0
+display 1,31,1
+display 0,0,0
 nop
-display 0,1,32
+nop
+nop

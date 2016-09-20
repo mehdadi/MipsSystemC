@@ -47,7 +47,7 @@
 //Utils
 
 //Masks
-#define MaskOP(x) ((x) >> 26)
+#define MaskOP(x) (((x) >> 26) & 0x3F)
 #define MaskF(x) ((x)&0x0000003F)
 #define MaskS(x) (((x)>>21) & 0x1F)
 #define MaskT(x) (((x)>>16) & 0x1F)

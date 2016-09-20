@@ -1,0 +1,14 @@
+addiu 0,0,10
+addiu 5,5,1
+nop,
+nop
+nop
+subu 0,5,0
+nop
+nop
+nop
+display 0,0,0
+nop
+nop
+nop
+bne 0,1,3
