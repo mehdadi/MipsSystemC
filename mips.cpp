@@ -292,12 +292,12 @@ void mips::mips_main()
                 case fetch:
                 {
                     ds[i] = Fetch(pc_sig);
-                    cout << "pc(" << i <<")is: " << hex <<"0x" << ds[i].pc_in << "\tins is: 0x" << hex << ds[i].ins << "\t" << std::bitset<32>(ds[i].ins).to_string() << endl;
+                    //cout << "pc(" << i <<")is: " << hex <<"0x" << ds[i].pc_in << "\tins is: 0x" << hex << ds[i].ins << "\t" << std::bitset<32>(ds[i].ins).to_string() << endl;
                 }break;
                 case decode:
                 {
                     branch = Decode(ds[i]);
-                    printDecodedStaff((ds[i]));
+                    //printDecodedStaff((ds[i]));
                 }break;
                 case exceute:
                 {
