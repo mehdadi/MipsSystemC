@@ -29,8 +29,12 @@ int main(int argc, char** argv)
 
         vector<string> comm = split(line, ' ');
         string first = comm[0];
-        string second = comm[1];
-
+        string second;
+        if (comm.size())
+        {
+           second = comm[1];
+        }
+        
         map<string, Instruction>::iterator val = myDictionary.find(first);
         if (val == myDictionary.end())
         {
