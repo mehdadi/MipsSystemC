@@ -2,8 +2,10 @@
 soon I will have a macro doing all but now.
 the way to compile testfile.
 
-(0) testfile
+to compile use -std=c++11
 
+
+(0) testfile
 
 rm imem.h
 
