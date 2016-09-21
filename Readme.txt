@@ -1,8 +1,8 @@
 # MipsSystemC
-This Project is based on a course compilation request by Professor Luciano Lavagno
+the soloution is defined as "Simulation of a simple MIPS Behaviour using systemC"
 
-1.The bases of this project is on systemC library and c++ compiled using clang++.
-Please avoid to compile systemC on the Cygwin since there is some constrains not working properly on it.
+1.The bases of this project is on systemC library.
+Please avoid to compile systemC on the Cygwin since there are some constrains not working properly on it.
 
 2. Contains two projects:
   i.Compiler in which translate the simple MIPS assembly code to the machine code.
@@ -22,6 +22,7 @@ ii.Compiling the Main.cpp
 the include and library is depended on the instalation version and place of compiled systemC.
 
 4.Run:
+
 (0) "your testfile"
 >rm imem.h
 >./comp (0) >> imem.h
