@@ -34,7 +34,7 @@ int main(int argc, char** argv)
         {
            second = comm[1];
         }
-        
+
         map<string, Instruction>::iterator val = myDictionary.find(first);
         if (val == myDictionary.end())
         {
