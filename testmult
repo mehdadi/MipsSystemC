@@ -1,0 +1,18 @@
+addiu 1,1,10
+addiu 2,2,10
+nop
+nop
+nop
+nop
+multu 1,2,0
+nop
+nop
+nop
+mflo 0,0,3
+nop
+nop
+nop
+display 0,0,0
+nop
+nop
+nop
